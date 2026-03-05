@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>De la idea clínica a pregunta PICO con un LLM | REBISALUD</title>
+<style>
+:root {
+  --navy: #1B3A5C;
+  --blue: #2B6CB0;
+  --teal: #00A99D;
+  --light-blue: #E8F4FD;
+  --gray-bg: #F0F2F5;
+  --gray-text: #64748B;
+  --white: #FFFFFF;
+  --shadow: 0 4px 24px rgba(27, 58, 92, 0.10);
+  --shadow-hover: 0 8px 32px rgba(27, 58, 92, 0.16);
+  --radius: 12px;
+  --sidebar-w: 260px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===== PASSWORD GATE ===== */
+.password-gate {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #1B3A5C 0%, #2B6CB0 40%, #00A99D 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.password-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.password-card h2 {
+  font-family: 'Montserrat', sans-serif;
+  color: #1B3A5C;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+.password-card .subtitle {
+  font-family: 'Montserrat', sans-serif;
+  color: #64748B;
+  font-size: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+.password-card input {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 2px solid #E2E8F0;
+  border-radius: 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.password-card input:focus { border-color: #2B6CB0; }
+.password-card input.error { border-color: #E53E3E; animation: shake 0.4s; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+.password-card button {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.7rem;
+  background: linear-gradient(135deg, #2B6CB0, #00A99D);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.password-card button:hover { opacity: 0.9; }
+.content-hidden .sidebar,
+.content-hidden .header,
+.content-hidden .main,
+.content-hidden .footer { display: none; }
+
+body {
+  font-family: 'Montserrat', -apple-system, sans-serif;
+  background: var(--gray-bg);
+  color: var(--navy);
+  min-height: 100vh;
+}
+
+/* ===== HEADER ===== */
+.header {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 40%, var(--teal) 70%, #E0F2F1 90%);
+  color: white;
+  padding: 2rem 2rem 1.5rem;
+  position: relative;
+  margin-left: var(--sidebar-w);
+}
+.header-logo {
+  position: absolute;
+  top: 0; right: 1.5rem;
+  height: 100%;
+  padding: 0.8rem 0;
+  opacity: 0.92;
+}
+.header-text { padding-right: 130px; }
+.header-congress {
+  font-size: 0.8rem;
+  font-weight: 300;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-bottom: 0.4rem;
+}
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 0.4rem;
+}
+.header-meta {
+  font-size: 0.82rem;
+  font-weight: 300;
+  opacity: 0.8;
+  line-height: 1.5;
+}
+.header-meta strong { font-weight: 500; opacity: 1; }
+.header-meta a { color: white; text-decoration: underline; text-underline-offset: 2px; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--white);
+  border-right: 1px solid #E2E8F0;
+  overflow-y: auto;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-header {
+  padding: 1.2rem 1rem 0.8rem;
+  border-bottom: 1px solid #E2E8F0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gray-text);
+}
+.sidebar-nav { padding: 0.6rem 0; flex: 1; }
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1rem;
+  text-decoration: none;
+  color: var(--navy);
+  font-size: 0.8rem;
+  font-weight: 400;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+}
+.sidebar-nav a:hover {
+  background: var(--gray-bg);
+  border-left-color: var(--teal);
+}
+.sidebar-nav a.active {
+  background: var(--light-blue);
+  border-left-color: var(--blue);
+  font-weight: 600;
+}
+.sidebar-nav a .nav-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--gray-bg);
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.sidebar-nav a.active .nav-num {
+  background: var(--blue);
+  color: white;
+}
+
+/* ===== MAIN CONTENT ===== */
+.main {
+  margin-left: var(--sidebar-w);
+  padding: 2rem 2.5rem 4rem;
+  max-width: calc(var(--sidebar-w) + 900px);
+}
+
+/* ===== BLOCKS ===== */
+.block {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  scroll-margin-top: 1.5rem;
+}
+.block-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1.2rem;
+}
+.block-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.block-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.block-meta {
+  font-size: 0.78rem;
+  color: var(--gray-text);
+  font-weight: 400;
+  margin-left: 0.3rem;
+}
+.block p {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  margin-bottom: 1rem;
+}
+.block h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.6rem;
+  color: var(--navy);
+}
+.block h4 {
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin: 1.2rem 0 0.4rem;
+  color: var(--blue);
+}
+.block ul, .block ol {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  margin: 0 0 1rem 1.2rem;
+}
+
+/* ===== INSTRUCTIONS BOX ===== */
+.instructions-box {
+  background: #F8FAFC;
+  border: 2px solid var(--blue);
+  border-radius: 8px;
+  padding: 1.2rem 1.5rem;
+  margin: 1rem 0;
+  position: relative;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.instructions-box .copy-btn {
+  position: sticky;
+  top: 0; float: right;
+  background: var(--blue);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.9rem;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 2;
+}
+.instructions-box .copy-btn:hover { background: var(--navy); }
+.instructions-box .copy-btn.copied { background: var(--teal); }
+
+/* ===== PROMPT BOXES ===== */
+.prompt-box {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-left: 4px solid var(--teal);
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin: 1rem 0;
+  position: relative;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.prompt-box .copy-btn {
+  position: absolute;
+  top: 0.5rem; right: 0.5rem;
+  background: var(--teal);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.prompt-box .copy-btn:hover { background: #008F85; }
+.prompt-box .copy-btn.copied { background: var(--navy); }
+
+/* ===== TOOL LINK ===== */
+.tool-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background: linear-gradient(135deg, var(--blue), var(--teal));
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  margin: 0.5rem 0.5rem 0.5rem 0;
+}
+.tool-link:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+
+/* ===== TABLES ===== */
+.block table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin: 1rem 0;
+}
+.block th {
+  background: var(--light-blue);
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  font-weight: 600;
+  font-size: 0.8rem;
+  border-bottom: 2px solid var(--blue);
+}
+.block td {
+  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+/* ===== CASE CARD ===== */
+.case-card {
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  border: 1px solid #F59E0B;
+  border-radius: var(--radius);
+  padding: 1.2rem 1.5rem;
+  margin: 1rem 0;
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+.case-card strong { color: #92400E; }
+.case-card .patient-question {
+  font-style: italic;
+  margin-top: 0.8rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid #F59E0B;
+  color: #92400E;
+  font-weight: 500;
+}
+
+/* ===== TIP BOX ===== */
+.tip-box {
+  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  border: 1px solid #22C55E;
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.tip-box strong { color: #166534; }
+
+/* ===== WARNING BOX ===== */
+.warning-box {
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+  border: 1px solid #F97316;
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.warning-box strong { color: #9A3412; }
+
+/* ===== FOOTER ===== */
+.footer {
+  margin-left: var(--sidebar-w);
+  padding: 2rem;
+  text-align: center;
+  border-top: 1px solid #E2E8F0;
+  background: var(--white);
+}
+.footer img { height: 30px; opacity: 0.6; margin-bottom: 0.5rem; }
+.footer p {
+  font-size: 0.75rem;
+  color: var(--gray-text);
+  line-height: 1.6;
+}
+.footer a { color: var(--blue); text-decoration: none; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .header, .main, .footer { margin-left: 0; }
+  .header-text { padding-right: 80px; }
+  .header-logo { height: 60px; top: 1rem; }
+}
+</style>
+</head>
+<body class="content-hidden">
+
+<!-- ===== PASSWORD GATE ===== -->
+<div class="password-gate" id="passwordGate">
+  <div class="password-card">
+    <h2>REBISALUD 2026</h2>
+    <p class="subtitle">IA para bibliotecarios de ciencias de la salud</p>
+    <input type="password" id="pwdInput" placeholder="Contraseña" autofocus>
+    <button onclick="checkPassword()">Acceder</button>
+  </div>
+</div>
+
+<!-- ===== SIDEBAR ===== -->
+<nav class="sidebar">
+  <div class="sidebar-header">Sesión 1 · Hora 2</div>
+  <div class="sidebar-nav">
+    <a href="#intro"><span class="nav-num">0</span> Contexto</a>
+    <a href="#instrucciones"><span class="nav-num">1</span> Preparar ChatGPT</a>
+    <a href="#pico"><span class="nav-num">2</span> Formato PICO</a>
+    <a href="#caso1"><span class="nav-num">3</span> Caso 1: Diabetes</a>
+    <a href="#caso2"><span class="nav-num">4</span> Caso 2: Pediatría</a>
+    <a href="#caso3"><span class="nav-num">5</span> Caso 3: Salud mental</a>
+    <a href="#mediador"><span class="nav-num">6</span> El bibliotecario mediador</a>
+    <a href="#verificar"><span class="nav-num">7</span> Verificar el PICO</a>
+    <a href="#ejercicio"><span class="nav-num">8</span> Ejercicio para casa</a>
+  </div>
+</nav>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+  <img src="alterbiblio-logo.png" alt="AlterBiblio" class="header-logo">
+  <div class="header-text">
+    <div class="header-congress">REBISALUD · Sesión 1</div>
+    <h1>De la idea clínica a pregunta PICO con un LLM</h1>
+    <div class="header-meta">
+      <strong><a href="https://www.linkedin.com/in/mariagarciapuente/" target="_blank">María García-Puente</a></strong> · AlterBiblio<br>
+      Taller de inteligencia artificial para bibliotecarios de ciencias de la salud · 10 marzo 2026
+    </div>
+  </div>
+</header>
+
+<!-- ===== MAIN ===== -->
+<div class="main">
+
+  <!-- INTRO -->
+  <section class="block" id="intro">
+    <div class="block-header">
+      <span class="block-num">0</span>
+      <div><span class="block-title">De la idea a la pregunta</span></div>
+    </div>
+
+    <p>El paso más crítico de cualquier búsqueda bibliográfica no es la búsqueda en sí, sino <strong>formular bien la pregunta</strong>. Una pregunta mal planteada produce resultados irrelevantes, por muy buena que sea la estrategia de búsqueda.</p>
+
+    <p>En esta hora vamos a practicar el proceso de convertir una idea clínica vaga en una pregunta de investigación estructurada en formato PICO, usando un LLM (ChatGPT, Claude o Gemini) como asistente.</p>
+
+    <div class="tip-box">
+      <strong>Para qué un LLM:</strong> No para que haga la búsqueda (eso viene en la sesión 2), sino para que nos ayude a <em>pensar</em> la pregunta: descomponer el problema clínico, identificar los elementos PICO y sugerir formulaciones alternativas que quizá no habíamos considerado.
+    </div>
+
+    <p>Podéis usar cualquiera de estas herramientas:</p>
+    <a href="https://chatgpt.com" target="_blank" class="tool-link">&#8599; ChatGPT</a>
+    <a href="https://gemini.google.com" target="_blank" class="tool-link">&#8599; Gemini</a>
+    <a href="https://claude.ai" target="_blank" class="tool-link">&#8599; Claude</a>
+  </section>
+
+  <!-- INSTRUCCIONES -->
+  <section class="block" id="instrucciones">
+    <div class="block-header">
+      <span class="block-num">1</span>
+      <div><span class="block-title">Preparar ChatGPT como documentalista</span><span class="block-meta">5 min</span></div>
+    </div>
+
+    <p>Para que ChatGPT responda como un documentalista experto (y no como un asistente genérico), vamos a configurar sus <strong>instrucciones personalizadas</strong>. Es un ajuste que se aplica a todas vuestras conversaciones.</p>
+
+    <h3>Cómo configurarlo</h3>
+    <ol>
+      <li>En ChatGPT, pulsad vuestro icono de perfil (abajo a la izquierda)</li>
+      <li>Seleccionad <strong>"Personalización"</strong> (o "Personalization")</li>
+      <li>En la ventana emergente, id al apartado <strong>"Instrucciones personalizadas"</strong> y pegad las instrucciones de abajo</li>
+      <li>Guardad los cambios</li>
+    </ol>
+
+    <div class="tip-box">
+      <strong>¿Por qué instrucciones personalizadas?</strong> Porque se aplican automáticamente a cada nueva conversación, sin tener que repetirlas. En la sesión 2 veremos los <em>Proyectos</em> de ChatGPT, que permiten además guardar archivos y separar temas.
+    </div>
+
+    <div class="instructions-box">
+      <button class="copy-btn" onclick="copyInstructions(this)">Copiar</button>Rol:
+Eres un bibliotecario documentalista experto en ciencias de la salud, especializado en búsquedas bibliográficas y formulación de preguntas de investigación.
+
+Tu función es ayudar a otros bibliotecarios y profesionales sanitarios a transformar necesidades de información clínica en preguntas de investigación estructuradas en formato PICO (Paciente/Población, Intervención, Comparador, Outcome).
+
+Comportamiento:
+- Actúa como un colega documentalista con experiencia, no como un asistente genérico
+- Cuando te presenten un escenario clínico, guía paso a paso hacia la formulación PICO
+- Sugiere formulaciones alternativas que el usuario quizá no haya considerado
+- Señala cuando un componente PICO no está claro o podría definirse mejor
+- Si no hay comparador natural, indica que la pregunta puede ser PIO o PO
+- Proporciona siempre los términos en español e inglés (pensando en la futura búsqueda en PubMed)
+- Distingue entre preguntas de tratamiento, diagnóstico, pronóstico y etiología, ya que la estructura PICO varía
+- Cuando el Outcome sea ambiguo, proporciona opciones concretas y medibles
+
+Formato de respuesta:
+- Presenta la pregunta PICO en tabla (P, I, C, O)
+- Redacta la pregunta completa en una frase
+- Sugiere al menos una formulación alternativa
+- Indica el tipo de estudio más adecuado para responderla
+
+Reglas:
+- Responde en español
+- No inventes datos clínicos ni referencias
+- Si algo no está claro, pregunta antes de asumir</div>
+
+    <div class="tip-box">
+      <strong>¿Por qué dar instrucciones?</strong> Sin ellas, ChatGPT responde como un asistente general. Con ellas, se comporta como un documentalista que conoce PICO, piensa en la búsqueda posterior en PubMed y sugiere alternativas que un bibliotecario experimentado consideraría.
+    </div>
+
+    <div class="warning-box">
+      <strong>Esto también funciona con Claude y Gemini.</strong> En Claude, id a vuestro perfil y buscad "Custom instructions". En Gemini, de momento hay que pegar las instrucciones al inicio de cada conversación nueva.
+    </div>
+  </section>
+
+  <!-- PICO -->
+  <section class="block" id="pico">
+    <div class="block-header">
+      <span class="block-num">2</span>
+      <div><span class="block-title">El formato PICO en 2 minutos</span></div>
+    </div>
+
+    <p>PICO es un marco para estructurar preguntas clínicas de forma que sean buscables. Cada letra define un componente:</p>
+
+    <table>
+      <thead><tr><th>Componente</th><th>Pregunta que responde</th><th>Ejemplo</th></tr></thead>
+      <tbody>
+        <tr><td><strong>P</strong> - Paciente/Población</td><td>¿A quién afecta?</td><td>Adultos con diabetes tipo 2</td></tr>
+        <tr><td><strong>I</strong> - Intervención</td><td>¿Qué se quiere probar?</td><td>Ejercicio aeróbico supervisado</td></tr>
+        <tr><td><strong>C</strong> - Comparador</td><td>¿Frente a qué se compara?</td><td>Consejo dietético solo</td></tr>
+        <tr><td><strong>O</strong> - Outcome (resultado)</td><td>¿Qué se quiere medir?</td><td>Control glucémico (HbA1c)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="warning-box">
+      <strong>No siempre hay comparador.</strong> En preguntas sobre diagnóstico, pronóstico o experiencia del paciente, el formato puede ser PIO o incluso PO. No forcéis un comparador donde no lo hay.
+    </div>
+
+    <h3>¿Por qué importa al bibliotecario?</h3>
+    <ul>
+      <li>Muchos usuarios llegan con preguntas vagas: "busca algo sobre IA en radiología"</li>
+      <li>Vuestro valor está en ayudarles a <strong>concretar la pregunta antes de buscar</strong></li>
+      <li>Un PICO bien hecho reduce el ruido en los resultados y ahorra tiempo a todos</li>
+      <li>Es el primer paso para cualquier revisión sistemática o informe de evidencia</li>
+    </ul>
+  </section>
+
+  <!-- PREPARAR ENTREVISTA -->
+  <div class="tip-box" style="margin-bottom: 2rem;">
+    <strong>Idea clave: el LLM como preparación para la entrevista de referencia.</strong> Antes de reunirte con el usuario, puedes pasarle al LLM la petición tal como te ha llegado y pedirle que te haga preguntas aclaratorias. Las preguntas que el LLM te plantee son exactamente las que tú puedes llevar preparadas a la entrevista de referencia. Así llegas más informada, haces preguntas más precisas y acortas la reunión. Es una forma de hacernos valer como profesionales: no sólo buscamos, sino que ayudamos a definir lo que hay que buscar.
+  </div>
+
+  <!-- CASO 1 -->
+  <section class="block" id="caso1">
+    <div class="block-header">
+      <span class="block-num">3</span>
+      <div>
+        <span class="block-title">Caso 1: Diabetes y ejercicio</span>
+        <span class="block-meta">10 min</span>
+      </div>
+    </div>
+
+    <div class="case-card">
+      <strong>Escenario:</strong> Un endocrinologo de tu hospital te contacta: "Estoy preparando una sesión clínica sobre ejercicio y diabetes. Necesito buscar artículos sobre si el ejercicio mejora el control del azucar en pacientes diabéticos tipo 2. ¿Me puedes ayudar?"
+      <div class="patient-question">Una pregunta frecuente, pero demasiado amplia para buscar directamente.</div>
+    </div>
+
+    <h3>Paso 1: Pide al LLM que te ayude a formular el PICO</h3>
+    <div class="prompt-box">Un endocrinólogo me ha pedido que busque artículos sobre si el ejercicio mejora el control glucémico en pacientes con diabetes tipo 2.
+
+Ayúdame a formular esta pregunta en formato PICO. Para cada componente (Paciente, Intervención, Comparador, Outcome), propón una definición concreta y explica por qué la has elegido.
+
+Si hay decisiones que tomar (por ejemplo, ¿incluimos sólo ejercicio aeróbico o también de fuerza?), preséntame las opciones en lugar de decidir por mí.
+
+Antes de proponer el PICO, hazme las preguntas que necesites para aclarar la petición. Esas preguntas me servirán también para preparar mi entrevista con el usuario.<button class="copy-btn" onclick="copyPrompt(this)">Copiar</button></div>
+
+    <h3>Paso 2: Evalúa la respuesta del LLM</h3>
+    <ul>
+      <li>¿Ha identificado correctamente los 4 componentes?</li>
+      <li>¿Te ha presentado opciones donde había ambigüedad?</li>
+      <li>¿La Población es lo bastante específica? (edad, comorbilidades, estadio)</li>
+      <li>¿El outcome es medible? (HbA1c es medible; "mejorar" no lo es)</li>
+    </ul>
+
+    <h3>Paso 3: Refina</h3>
+    <div class="prompt-box">Bien. Quiero centrarme en:
+- P: Adultos (>18 años) con diabetes tipo 2 diagnosticada hace al menos 1 año
+- I: Ejercicio aeróbico supervisado (al menos 3 sesiones/semana durante 12+ semanas)
+- C: Cuidado estándar sin programa de ejercicio estructurado
+- O: Cambio en HbA1c a los 3-6 meses
+
+¿Ves algún problema con esta formulación? ¿Estoy siendo demasiado restrictivo o demasiado amplio en algún componente?<button class="copy-btn" onclick="copyPrompt(this)">Copiar</button></div>
+  </section>
+
+  <!-- CASO 2 -->
+  <section class="block" id="caso2">
+    <div class="block-header">
+      <span class="block-num">4</span>
+      <div>
+        <span class="block-title">Caso 2: Bronquiolitis en pediatría</span>
+        <span class="block-meta">10 min</span>
+      </div>
+    </div>
+
+    <div class="case-card">
+      <strong>Escenario:</strong> Una pediatra te escribe: "Tenemos muchos ingresos por bronquiolitis este invierno y hay debate sobre si deberíamos usar suero salino hipertónico nebulizado. ¿Puedes buscarme lo último?"
+      <div class="patient-question">Aquí hay un comparador implicito (no usar suero hipertónico) que hay que hacer explícito.</div>
+    </div>
+
+    <h3>Formulad el PICO con el LLM</h3>
+    <div class="prompt-box">Una pediatra me pide ayuda para buscar evidencia sobre el uso de suero salino hipertónico nebulizado en lactantes hospitalizados por bronquiolitis aguda.
+
+Ayúdame a formular esta pregunta en formato PICO. Incluye:
+1. Los 4 componentes con definiciones concretas
+2. Decisiones que habría que tomar (concentración del suero, edad de los lactantes, gravedad)
+3. Qué outcomes serían los más relevantes clínicamente
+
+Antes de proponer el PICO, hazme las preguntas aclaratorias que consideres necesarias. Me servirán para preparar la entrevista con la pediatra.<button class="copy-btn" onclick="copyPrompt(this)">Copiar</button></div>
+
+    <h3>Pregunta extra para el grupo</h3>
+    <p>El LLM probablemente sugiera "duración de la hospitalizacion" como outcome principal. ¿Es el único que importa? Pensad en otros: necesidad de oxígeno suplementario, ingreso en UCI, puntuación de gravedad clínica, reingreso a los 7 días...</p>
+  </section>
+
+  <!-- CASO 3 -->
+  <section class="block" id="caso3">
+    <div class="block-header">
+      <span class="block-num">5</span>
+      <div>
+        <span class="block-title">Caso 3: Salud mental y teleterapia</span>
+        <span class="block-meta">10 min</span>
+      </div>
+    </div>
+
+    <div class="case-card">
+      <strong>Escenario:</strong> La jefa de psiquiatria quiere saber si la terapia online es igual de efectiva que la presencial para tratar la depresión. "Desde la pandemia hacemos mucha teleconsulta, pero no se si la evidencia nos respalda."
+      <div class="patient-question">Este caso tiene una particularidad: el comparador no es "no tratar", sino otra modalidad del mismo tratamiento.</div>
+    </div>
+
+    <h3>Formulad el PICO con el LLM</h3>
+    <div class="prompt-box">Una psiquiatra quiere evidencia sobre si la terapia cognitivo-conductual (TCC) online es igual de efectiva que la TCC presencial para tratar la depresión mayor en adultos.
+
+Formúlame esta pregunta en formato PICO. Presta atención a:
+- ¿Cómo definimos "online"? (videoconferencia, app, mensajería)
+- ¿Qué tipo de depresión? (mayor, leve-moderada, resistente)
+- ¿Qué outcomes son relevantes? (remisión, adherencia, satisfacción del paciente)
+- ¿Es una pregunta de superioridad, no-inferioridad o equivalencia?
+
+Si necesitas más información para formular el PICO, hazme preguntas. Las usaré para preparar mi conversación con la psiquiatra.<button class="copy-btn" onclick="copyPrompt(this)">Copiar</button></div>
+
+    <div class="tip-box">
+      <strong>Atención al tipo de pregunta:</strong> "Igual de efectiva" no es lo mismo que "mejor que". En una pregunta de no-inferioridad, el diseño del estudio y el margen de no-inferioridad son críticos. El LLM puede ayudaros a distinguir esto.
+    </div>
+  </section>
+
+  <!-- EL BIBLIOTECARIO MEDIADOR -->
+  <section class="block" id="mediador">
+    <div class="block-header">
+      <span class="block-num">6</span>
+      <div>
+        <span class="block-title">El bibliotecario como mediador</span>
+        <span class="block-meta">10 min</span>
+      </div>
+    </div>
+
+    <p>En la práctica, vuestro rol no es sólo formular el PICO vosotros, sino <strong>ayudar al clínico a formularlo</strong>. El LLM puede ser una herramienta para esa conversación.</p>
+
+    <h3>Escenario: el usuario llega con una pregunta vaga</h3>
+    <div class="prompt-box">Un usuario de mi biblioteca me ha dicho: "Necesito artículos sobre inteligencia artificial en radiología".
+
+Hazme una lista de 5 preguntas que debería hacerle para convertir esa idea en una pregunta de investigación buscable. Las preguntas deben ser claras y no técnicas, porque el usuario no tiene por qué conocer el formato PICO.<button class="copy-btn" onclick="copyPrompt(this)">Copiar</button></div>
+
+    <h3>Escenario: convertir la respuesta del usuario en PICO</h3>
+    <div class="prompt-box">El usuario me ha respondido lo siguiente:
+- Es radiólogo en un hospital comarcal
+- Le interesa saber si la IA puede ayudar a detectar fracturas en radiografías de urgencias
+- Quiere saber si reduce los errores diagnósticos
+- No tiene preferencia por ningún sistema concreto de IA
+- Es para una sesión clínica, no para una revisión sistemática
+
+Con esta información, formula una pregunta PICO y sugiere también una versión más amplia y otra más restrictiva, para que yo pueda discutir con el usuario cuál se ajusta mejor a lo que necesita.<button class="copy-btn" onclick="copyPrompt(this)">Copiar</button></div>
+
+    <div class="tip-box">
+      <strong>Clave:</strong> El LLM genera opciones, pero la decisión final es del bibliotecario y el usuario. Vuestro valor está en saber qué preguntar, no en tener la respuesta.
+    </div>
+  </section>
+
+  <!-- VERIFICAR -->
+  <section class="block" id="verificar">
+    <div class="block-header">
+      <span class="block-num">7</span>
+      <div>
+        <span class="block-title">Verificar el PICO del LLM</span>
+        <span class="block-meta">10 min</span>
+      </div>
+    </div>
+
+    <p>El LLM es un asistente, no un experto. Siempre debéis <strong>verificar lo que propone</strong>. Aquí tenéis una lista de comprobación:</p>
+
+    <table>
+      <thead><tr><th>Comprobación</th><th>Pregunta clave</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Población</strong></td><td>¿Es lo bastante específica para generar resultados relevantes, pero no tan estrecha que no encuentres nada?</td></tr>
+        <tr><td><strong>Intervención</strong></td><td>¿Está bien definida? ¿Incluye dosis, duracion, modalidad?</td></tr>
+        <tr><td><strong>Comparador</strong></td><td>¿Es el comparador adecuado para la pregunta clínica? ¿Placebo, tratamiento estandar, otra intervención?</td></tr>
+        <tr><td><strong>Outcome</strong></td><td>¿Es medible? ¿Es clínicamente relevante (no sólo estadísticamente significativo)?</td></tr>
+        <tr><td><strong>Tipo de pregunta</strong></td><td>¿Es de terapia, diagnóstico, pronóstico o etiología? Esto afecta al tipo de estudio que buscaremos.</td></tr>
+        <tr><td><strong>Alcance</strong></td><td>¿Es para una sesión clínica (búsqueda rápida) o para una revisión sistemática (búsqueda exhaustiva)?</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Prompt final: pide al LLM que se autocritique</h3>
+    <div class="prompt-box">Revisa el PICO que acabas de proponer y dime:
+1. ¿Qué componente es el más débil o ambiguo?
+2. ¿Qué términos podrían tener varios significados en la literatura?
+3. ¿Hay algún sesgo implícito en cómo he formulado la pregunta?
+4. Si tuvieras que buscar esto en PubMed, ¿qué términos MeSH usarías para cada componente del PICO?<button class="copy-btn" onclick="copyPrompt(this)">Copiar</button></div>
+
+    <div class="warning-box">
+      <strong>Cuidado con los MeSH que sugiere el LLM.</strong> Los LLM pueden inventar términos MeSH que no existen o usar términos desactualizados. En la sesión 2 aprenderemos a validar los MeSH directamente en PubMed.
+    </div>
+
+    <h3>Mensaje clave</h3>
+    <p><strong>El LLM acelera la formulación de la pregunta, pero no sustituye vuestro criterio profesional.</strong> Usadlo para generar opciones, identificar ambigüedades y pensar en aspectos que no habíais considerado. La decisión final siempre es vuestra.</p>
+  </section>
+
+  <!-- EJERCICIO PARA CASA -->
+  <section class="block" id="ejercicio">
+    <div class="block-header">
+      <span class="block-num">8</span>
+      <div>
+        <span class="block-title">Ejercicio para casa</span>
+        <span class="block-meta">individual</span>
+      </div>
+    </div>
+
+    <div class="case-card">
+      <strong>Escenario:</strong> Una enfermera de la unidad de cuidados paliativos se acerca a tu mostrador y te dice: "Estamos viendo que muchos familiares de nuestros pacientes terminales tienen ansiedad y depresión, y nos preguntamos si hay evidencia de que las intervenciones de mindfulness les puedan ayudar. Es para una propuesta que queremos presentar a dirección."
+    </div>
+
+    <h3>Lo que tenéis que hacer</h3>
+    <ol>
+      <li>Abrid una conversación nueva en ChatGPT, Claude o Gemini (el que prefiráis)</li>
+      <li>Usad el LLM para <strong>transformar esta petición en una pregunta PICO bien formulada</strong>, paso a paso</li>
+      <li>No aceptéis la primera propuesta del LLM: refinad, preguntad, pedid alternativas</li>
+      <li>Terminad con una tabla PICO definitiva y la pregunta redactada en una frase</li>
+    </ol>
+
+    <h3>Lo que se valorará</h3>
+    <ul>
+      <li>Que la conversación muestre un <strong>proceso iterativo</strong> (no un solo prompt y listo)</li>
+      <li>Que hayáis tomado <strong>decisiones razonadas</strong> sobre cada componente PICO (por ejemplo: ¿incluimos sólo cuidadores principales o también otros familiares? ¿Qué tipo de mindfulness?)</li>
+      <li>Que el PICO final sea <strong>concreto y buscable</strong></li>
+      <li>Que hayáis usado la lista de comprobación de la sección anterior para verificar el resultado</li>
+    </ul>
+
+    <div class="case-card">
+      <strong>Instrucciones de entrega</strong><br>
+      Copiad y pegad la conversación completa en un documento (no importa la longitud).<br>
+      Formatos aceptados: <strong>.docx</strong>, <strong>.txt</strong> o <strong>.pdf</strong><br>
+      Subid el documento a la <strong>plataforma Moodle</strong> del curso.
+    </div>
+
+    <div class="tip-box">
+      <strong>Pistas:</strong> Pensad en qué población es esta exactamente (¿cuidadores principales? ¿familiares en general?), qué tipo de intervención de mindfulness (¿programa estructurado como MBSR? ¿sesiones puntuales?), si tiene sentido un comparador y cuál sería, y qué outcomes son los más relevantes para convencer a dirección.
+    </div>
+
+    <div class="warning-box">
+      <strong>Consejo:</strong> En ChatGPT y Claude podéis seleccionar toda la conversación con Ctrl+A (o Cmd+A en Mac) y pegarla directamente en un documento de texto. No hace falta captura de pantalla.
+    </div>
+  </section>
+
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <img src="alterbiblio-logo.png" alt="AlterBiblio">
+  <p>&copy; 2026 AlterBiblio · <a href="https://www.linkedin.com/in/mariagarciapuente/" target="_blank">María García-Puente</a></p>
+</footer>
+
+<!-- ===== SCRIPTS ===== -->
+<script>
+// Password check
+function checkPassword() {
+  const input = document.getElementById('pwdInput');
+  if (input.value === 'REBISALUD2026') {
+    document.getElementById('passwordGate').style.display = 'none';
+    document.body.classList.remove('content-hidden');
+    sessionStorage.setItem('rebisalud-auth', '1');
+  } else {
+    input.classList.add('error');
+    input.value = '';
+    input.placeholder = 'Contraseña incorrecta';
+    setTimeout(() => { input.classList.remove('error'); input.placeholder = 'Contraseña'; }, 1500);
+  }
+}
+document.getElementById('pwdInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkPassword(); });
+if (sessionStorage.getItem('rebisalud-auth') === '1') {
+  document.getElementById('passwordGate').style.display = 'none';
+  document.body.classList.remove('content-hidden');
+}
+
+// Copy prompt
+function copyPrompt(btn) {
+  const box = btn.parentElement;
+  const text = box.textContent.replace('Copiar', '').replace('Copiado', '').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copiado';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copiar';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+// Copy instructions
+function copyInstructions(btn) {
+  const box = btn.parentElement;
+  const text = box.textContent.replace('Copiar', '').replace('Copiado', '').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copiado';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copiar';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+// Active sidebar on scroll
+const sections = document.querySelectorAll('.block');
+const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 100) current = s.id;
+  });
+  navLinks.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+});
+</script>
+</body>
+</html>
