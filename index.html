@@ -410,6 +410,29 @@ body {
 }
 .warning-box strong { color: #9A3412; }
 
+/* ===== SESSION BANNER ===== */
+.session-banner {
+  margin-left: var(--sidebar-w);
+  background: var(--white);
+  border-bottom: 3px solid var(--teal);
+  padding: 1.5rem 2.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+.session-num {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+.session-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
 /* ===== FOOTER ===== */
 .footer {
   margin-left: var(--sidebar-w);
@@ -429,7 +452,7 @@ body {
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .sidebar { display: none; }
-  .header, .main, .footer { margin-left: 0; }
+  .header, .main, .footer, .session-banner { margin-left: 0; }
   .header-text { padding-right: 80px; }
   .header-logo { height: 60px; top: 1rem; }
 }
@@ -468,13 +491,18 @@ body {
   <img src="alterbiblio-logo.png" alt="AlterBiblio" class="header-logo">
   <div class="header-text">
     <div class="header-congress">REBISALUD · Sesión 1</div>
-    <h1>De la idea clínica a pregunta PICO con un LLM</h1>
+    <h1>Conceptos y formulación de la pregunta</h1>
     <div class="header-meta">
       <strong><a href="https://www.linkedin.com/in/mariagarciapuente/" target="_blank">María García-Puente</a></strong> · AlterBiblio<br>
       Taller de inteligencia artificial para bibliotecarios de ciencias de la salud · 10 marzo 2026
     </div>
   </div>
 </header>
+
+<!-- ===== SESSION BANNER ===== -->
+<div class="session-banner">
+  <span class="session-title">De la idea clínica a pregunta PICO con un LLM</span>
+</div>
 
 <!-- ===== MAIN ===== -->
 <div class="main">
