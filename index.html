@@ -24,75 +24,6 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* ===== PASSWORD GATE ===== */
-.password-gate {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(135deg, #1B3A5C 0%, #2B6CB0 40%, #00A99D 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-.password-card {
-  background: white;
-  border-radius: 16px;
-  padding: 2.5rem 2rem;
-  max-width: 380px;
-  width: 90%;
-  text-align: center;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-}
-.password-card h2 {
-  font-family: 'Montserrat', sans-serif;
-  color: #1B3A5C;
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-bottom: 0.3rem;
-}
-.password-card .subtitle {
-  font-family: 'Montserrat', sans-serif;
-  color: #64748B;
-  font-size: 0.8rem;
-  margin-bottom: 1.5rem;
-}
-.password-card input {
-  width: 100%;
-  padding: 0.7rem 1rem;
-  border: 2px solid #E2E8F0;
-  border-radius: 8px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 0.9rem;
-  text-align: center;
-  outline: none;
-  transition: border-color 0.2s;
-}
-.password-card input:focus { border-color: #2B6CB0; }
-.password-card input.error { border-color: #E53E3E; animation: shake 0.4s; }
-@keyframes shake {
-  0%,100% { transform: translateX(0); }
-  25% { transform: translateX(-6px); }
-  75% { transform: translateX(6px); }
-}
-.password-card button {
-  margin-top: 1rem;
-  width: 100%;
-  padding: 0.7rem;
-  background: linear-gradient(135deg, #2B6CB0, #00A99D);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-.password-card button:hover { opacity: 0.9; }
-.content-hidden .sidebar,
-.content-hidden .header,
-.content-hidden .main,
-.content-hidden .footer { display: none; }
 
 body {
   font-family: 'Montserrat', -apple-system, sans-serif;
@@ -458,17 +389,7 @@ body {
 }
 </style>
 </head>
-<body class="content-hidden">
-
-<!-- ===== PASSWORD GATE ===== -->
-<div class="password-gate" id="passwordGate">
-  <div class="password-card">
-    <h2>REBISALUD 2026</h2>
-    <p class="subtitle">IA para bibliotecarios de ciencias de la salud</p>
-    <input type="password" id="pwdInput" placeholder="Contraseña" autofocus>
-    <button onclick="checkPassword()">Acceder</button>
-  </div>
-</div>
+<body>
 
 <!-- ===== SIDEBAR ===== -->
 <nav class="sidebar">
@@ -851,26 +772,6 @@ Con esta información, formula una pregunta PICO y sugiere también una versión
 
 <!-- ===== SCRIPTS ===== -->
 <script>
-// Password check
-function checkPassword() {
-  const input = document.getElementById('pwdInput');
-  if (input.value === 'REBISALUD2026') {
-    document.getElementById('passwordGate').style.display = 'none';
-    document.body.classList.remove('content-hidden');
-    sessionStorage.setItem('rebisalud-auth', '1');
-  } else {
-    input.classList.add('error');
-    input.value = '';
-    input.placeholder = 'Contraseña incorrecta';
-    setTimeout(() => { input.classList.remove('error'); input.placeholder = 'Contraseña'; }, 1500);
-  }
-}
-document.getElementById('pwdInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkPassword(); });
-if (sessionStorage.getItem('rebisalud-auth') === '1') {
-  document.getElementById('passwordGate').style.display = 'none';
-  document.body.classList.remove('content-hidden');
-}
-
 // Copy prompt
 function copyPrompt(btn) {
   const box = btn.parentElement;
